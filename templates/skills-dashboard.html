@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skills Dashboard · 技能仪表盘</title>
+<style>
+/* ============ 暖色手帐风格变量 ============ */
+:root {
+  --paper: #fef9f1;
+  --paper-warm: #fdf6eb;
+  --card: #fffcf5;
+  --ink: #3d3530;
+  --ink-secondary: #6b5e53;
+  --ink-muted: #9c8b7a;
+  --grid-line: #f2e8d5;
+  --border-warm: #e8d8be;
+  --terra: #d4866b;
+  --terra-light: #fdf0e8;
+  --amber: #e8a840;
+  --amber-light: #fef7eb;
+  --sage: #8fa87a;
+  --sage-light: #f2f6ed;
+  --rust: #c17359;
+  --rust-light: #fef4ef;
+  --olive: #a09860;
+  --olive-light: #faf8ef;
+  --rose: #d4958a;
+  --rose-light: #fdf4f2;
+  --shadow-sm: 0 1px 3px rgba(61,53,48,.06);
+  --shadow-md: 0 3px 12px rgba(61,53,48,.08);
+  --shadow-lg: 0 8px 30px rgba(61,53,48,.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-xs: 4px;
+  --font-display: 'Georgia', 'Noto Serif SC', 'Source Han Serif SC', serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+}
+
+/* ============ 网格笔记背景 ============ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  font-size:15px;line-height:1.75;color:var(--ink);background:var(--paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size:24px 24px;
+  background-position:0 0;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* ============ 容器 ============ */
+.container{max-width:1200px;margin:0 auto;padding:0 28px}
+
+/* ============ 顶栏 ============ */
+header{
+  background:var(--card);border-bottom:2px solid var(--border-warm);
+  padding:18px 0;position:sticky;top:0;z-index:100;
+  box-shadow:0 1px 0 var(--grid-line);
+}
+.header-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo-area{display:flex;align-items:center;gap:10px}
+.logo-icon{
+  width:38px;height:38px;background:var(--terra);border-radius:var(--radius-xs);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:18px;font-weight:700;font-family:var(--font-display);
+}
+.logo-text{font-size:16px;font-weight:700;color:var(--ink);font-family:var(--font-display);letter-spacing:.3px}
+
+.search-box{
+  display:flex;align-items:center;gap:8px;
+  background:var(--paper);border:1.5px solid var(--border-warm);border-radius:50px;
+  padding:8px 16px;min-width:260px;transition:all .2s;
+}
+.search-box:focus-within{border-color:var(--terra);box-shadow:0 0 0 3px var(--terra-light)}
+.search-box input{
+  border:none;outline:none;background:transparent;font-size:14px;width:100%;color:var(--ink);
+}
+.search-box input::placeholder{color:var(--ink-muted)}
+
+.stat-row{display:flex;gap:8px;flex-wrap:wrap}
+.stat-badge{
+  padding:5px 14px;border-radius:50px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;
+}
+.stat-badge.total{background:var(--terra-light);color:var(--terra)}
+.stat-badge.builtin{background:var(--amber-light);color:var(--amber)}
+.stat-badge.custom{background:var(--sage-light);color:var(--sage)}
+.stat-badge .num{font-size:17px;font-family:var(--font-display)}
+
+/* ============ Tab 导航 ============ */
+.tab-nav{
+  display:flex;gap:0;margin-bottom:32px;border-bottom:2px solid var(--border-warm);
+  position:sticky;top:80px;z-index:50;background:var(--paper);
+}
+.tab-btn{
+  padding:14px 28px;font-size:15px;font-weight:600;border:none;background:none;
+  color:var(--ink-muted);cursor:pointer;position:relative;transition:all .2s;
+  font-family:var(--font-display);letter-spacing:.3px;
+}
+.tab-btn:hover{color:var(--terra)}
+.tab-btn.active{color:var(--terra)}
+.tab-btn.active::after{
+  content:'';position:absolute;bottom:-2px;left:0;right:0;height:3px;
+  background:var(--terra);border-radius:3px 3px 0 0;
+}
+.tab-btn .tab-icon{margin-right:6px}
+
+/* ============ Tab 内容区 ============ */
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeSlide .35s ease}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============ 筛选 ============ */
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.filter-chip{
+  padding:7px 16px;border-radius:50px;font-size:13px;font-weight:600;
+  border:1.5px solid var(--border-warm);background:var(--card);color:var(--ink-secondary);
+  cursor:pointer;transition:all .2s;
+}
+.filter-chip:hover{border-color:var(--terra);color:var(--terra)}
+.filter-chip.active{background:var(--terra);color:#fff;border-color:var(--terra)}
+.filter-chip .count{font-size:11px;opacity:.7;margin-left:3px}
+.filter-info{font-size:13px;color:var(--ink-muted);margin-bottom:18px}
+
+/* ============ 技能卡片 ============ */
+.skills-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(350px,1fr));
+  gap:16px;
+}
+.skill-card{
+  background:var(--card);border:1.5px solid var(--border-warm);border-radius:var(--radius);
+  padding:20px 22px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);
+  position:relative;
+  animation:cardIn .45s ease both;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px);
+  background-size:100% 26px;
+  background-position:0 14px;
+}
+.skill-card:hover{
+  transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--amber);
+}
+.skill-card.expanded{box-shadow:var(--shadow-md);border-color:var(--terra);border-width:2px}
+
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.card-name{font-weight:700;font-size:15px;color:var(--ink);font-family:var(--font-mono);word-break:break-all}
+.card-badges{display:flex;gap:5px;flex-shrink:0}
+.source-badge{padding:2px 9px;border-radius:50px;font-size:10px;font-weight:700;white-space:nowrap}
+.source-badge.anthropic{background:var(--terra-light);color:var(--rust)}
+.source-badge.lark{background:var(--sage-light);color:var(--sage)}
+.source-badge.custom{background:var(--amber-light);color:#b07a20}
+.source-badge.builtin{background:var(--olive-light);color:var(--olive)}
+.source-badge.third{background:var(--rose-light);color:var(--rose)}
+.card-desc{
+  font-size:13px;color:var(--ink-secondary);margin-top:10px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  line-height:1.7;
+}
+.card-expand-hint{
+  font-size:11px;color:var(--ink-muted);margin-top:8px;display:flex;align-items:center;gap:4px;
+  transition:color .2s;
+}
+.skill-card:hover .card-expand-hint{color:var(--terra)}
+.card-expand-hint::after{content:'▾';transition:transform .25s;display:inline-block}
+.skill-card.expanded .card-expand-hint::after{transform:rotate(180deg)}
+
+/* 展开详情 */
+.card-detail{
+  display:none;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border-warm);
+}
+.skill-card.expanded .card-detail{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.dim-item{margin-bottom:10px}
+.dim-item:last-child{margin-bottom:0}
+.dim-item-label{
+  font-size:11px;font-weight:700;color:var(--terra);margin-bottom:3px;
+  letter-spacing:.4px;
+}
+.dim-item-text{font-size:13px;color:var(--ink-secondary);line-height:1.7}
+.step-tags{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.step-tag{
+  padding:3px 9px;background:var(--paper);border:1px solid var(--border-warm);
+  border-radius:var(--radius-xs);font-size:12px;color:var(--ink-secondary);
+}
+.step-arrow{color:var(--ink-muted);font-size:10px}
+.tool-tag{
+  padding:3px 8px;background:var(--amber-light);border-radius:var(--radius-xs);
+  font-size:11px;color:#b07a20;font-family:var(--font-mono);
+}
+
+/* 空状态 */
+.no-results{display:none;text-align:center;padding:80px 20px;color:var(--ink-muted)}
+.no-results.visible{display:block}
+.no-results .nr-icon{font-size:42px;margin-bottom:10px}
+.no-results p{font-size:14px}
+
+/* ============ Tab 2: Skill 介绍区 ============ */
+.intro-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+.intro-define .big-def{
+  font-family:var(--font-display);font-size:20px;line-height:1.7;color:var(--ink);
+  margin-bottom:18px;padding:22px 24px;background:var(--terra-light);
+  border-radius:var(--radius);border-left:4px solid var(--terra);
+}
+.intro-define .big-def em{font-style:normal;color:var(--terra);font-weight:700}
+.intro-define p{color:var(--ink-secondary);margin-bottom:10px;font-size:14px}
+
+.dim-cards{display:grid;gap:8px}
+.dim-card{
+  background:var(--card);border:1.5px solid var(--border-warm);border-radius:var(--radius-sm);
+  padding:14px 16px;display:flex;gap:12px;align-items:flex-start;
+  transition:all .2s;
+  background-image:linear-gradient(var(--grid-line) 1px, transparent 1px);
+  background-size:100% 26px;background-position:0 8px;
+}
+.dim-card:hover{border-color:var(--amber);box-shadow:var(--shadow-sm)}
+.dim-card .dim-num{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;
+}
+.dim-card:nth-child(1) .dim-num{background:var(--terra)}
+.dim-card:nth-child(2) .dim-num{background:var(--amber)}
+.dim-card:nth-child(3) .dim-num{background:var(--sage)}
+.dim-card:nth-child(4) .dim-num{background:var(--rust)}
+.dim-card:nth-child(5) .dim-num{background:var(--rose)}
+.dim-card:nth-child(6) .dim-num{background:var(--olive)}
+.dim-card:nth-child(7) .dim-num{background:var(--ink-secondary)}
+.dim-card .dim-info{flex:1}
+.dim-card .dim-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.dim-card .dim-body{font-size:12px;color:var(--ink-secondary);line-height:1.6}
+.dim-card .dim-ex{font-size:11px;color:var(--ink-muted);margin-top:2px;font-style:italic}
+
+/* ============ Tab 3: 教程区 ============ */
+.tutorial-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.tutorial-block{
+  background:var(--card);border:1.5px solid var(--border-warm);border-radius:var(--radius);
+  padding:26px;
+  background-image:linear-gradient(var(--grid-line) 1px, transparent 1px);
+  background-size:100% 28px;background-position:0 12px;
+}
+.tutorial-block h3{font-family:var(--font-display);font-size:18px;margin-bottom:4px;color:var(--ink)}
+.tutorial-block .t-sub{font-size:13px;color:var(--ink-muted);margin-bottom:18px}
+
+.method-card{
+  background:var(--paper);border:1.5px solid var(--border-warm);border-radius:var(--radius-sm);
+  padding:16px 18px;margin-bottom:12px;transition:all .2s;
+}
+.method-card:hover{border-color:var(--amber);box-shadow:var(--shadow-sm)}
+.method-card .method-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.method-diff{padding:2px 7px;border-radius:var(--radius-xs);font-size:10px;font-weight:700;letter-spacing:.3px}
+.method-diff.easy{background:var(--sage-light);color:var(--sage)}
+.method-diff.medium{background:var(--amber-light);color:#b07a20}
+.method-diff.hard{background:var(--terra-light);color:var(--rust)}
+.method-card h4{font-size:14px;font-weight:700;color:var(--ink)}
+.method-card p{font-size:13px;color:var(--ink-secondary);margin-bottom:8px}
+.method-card pre{
+  background:#3d3530;color:#f5e6d0;padding:14px 16px;border-radius:var(--radius-sm);
+  font-size:12px;font-family:var(--font-mono);overflow-x:auto;white-space:pre-wrap;
+  line-height:1.7;
+}
+
+.checklist{list-style:none;margin:12px 0}
+.checklist li{
+  padding:7px 0;font-size:13px;color:var(--ink-secondary);display:flex;align-items:center;gap:10px;
+  cursor:pointer;transition:color .15s;
+}
+.checklist li::before{
+  content:'';width:18px;height:18px;border:2px solid var(--border-warm);border-radius:3px;
+  flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center;
+  font-size:11px;
+}
+.checklist li.checked{color:var(--ink)}
+.checklist li.checked::before{
+  background:var(--sage);border-color:var(--sage);
+  content:'✓';color:#fff;font-weight:700;
+}
+
+.skeleton-code{
+  background:var(--paper);border:1.5px solid var(--border-warm);border-radius:var(--radius-sm);
+  padding:16px;font-size:12px;font-family:var(--font-mono);color:var(--ink-secondary);
+  line-height:1.9;overflow-x:auto;white-space:pre;margin-top:8px;
+}
+
+/* ============ 页脚 ============ */
+footer{
+  text-align:center;padding:36px 0 28px;color:var(--ink-muted);font-size:12px;
+  margin-top:40px;
+}
+footer code{color:var(--terra);font-size:11px}
+
+/* ============ 响应式 ============ */
+@media (max-width:860px){
+  .intro-grid,.tutorial-grid{grid-template-columns:1fr}
+  .skills-grid{grid-template-columns:1fr}
+  .header-inner{flex-direction:column;align-items:flex-start}
+  .search-box{width:100%}
+  .tab-btn{padding:12px 16px;font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 顶栏 ============ -->
+<header>
+<div class="container header-inner">
+  <div class="logo-area">
+    <div class="logo-icon">S</div>
+    <div class="logo-text">技能仪表盘</div>
+  </div>
+  <div class="search-box">
+    <span>🔍</span>
+    <input type="text" id="searchInput" placeholder="搜索技能名称、描述、用途…" autocomplete="off">
+  </div>
+  <div class="stat-row" id="statRow"></div>
+</div>
+</header>
+
+<!-- ============ Tab 导航 ============ -->
+<div class="container">
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-btn active" data-tab="gallery">
+      <span class="tab-icon">📦</span>我的技能库
+    </button>
+    <button class="tab-btn" data-tab="intro">
+      <span class="tab-icon">📖</span>什么是 Skill？
+    </button>
+    <button class="tab-btn" data-tab="tutorial">
+      <span class="tab-icon">🛠️</span>技能教程
+    </button>
+  </div>
+</div>
+
+<!-- ============ Tab 1: 我的技能库 ============ -->
+<div class="tab-content active" id="tab-gallery">
+<div class="container">
+  <div class="filter-bar" id="filterBar"></div>
+  <div class="filter-info" id="filterInfo"></div>
+  <div class="skills-grid" id="skillsGrid"></div>
+  <div class="no-results" id="noResults">
+    <div class="nr-icon">🕵️</div>
+    <p>没找到匹配的技能，试试换个关键词？</p>
+  </div>
+</div>
+</div>
+
+<!-- ============ Tab 2: 什么是 Skill ============ -->
+<div class="tab-content" id="tab-intro">
+<div class="container">
+
+  <!-- === 快速定义 === -->
+  <div class="big-def" style="max-width:800px;margin:0 auto 30px;text-align:center">
+    一个 Skill 就是一份<em>「专属说明书」</em>，装好后 AI 在恰当的时机自动翻阅，照着里面的规范、流程、工具来做事。
+  </div>
+
+  <!-- === 7 维度速览卡片 === -->
+  <p style="text-align:center;color:var(--ink-secondary);margin-bottom:16px;font-size:14px">每个 Skill 由 <strong>7 个维度</strong> 定义自己——缺一不可，写满才合格：</p>
+  <div class="dim-cards" style="max-width:800px;margin:0 auto 24px">
+    <div class="dim-card"><div class="dim-num">1</div><div class="dim-info"><div class="dim-title">元数据（我是谁）</div><div class="dim-body">名字 + 触发条件 + 排除场景，告诉 AI 什么时候翻这份说明书</div></div></div>
+    <div class="dim-card"><div class="dim-num">2</div><div class="dim-info"><div class="dim-title">边界（管什么 / 不管什么）</div><div class="dim-body">划定能力范围，明确前置条件，不越界不乱干</div></div></div>
+    <div class="dim-card"><div class="dim-num">3</div><div class="dim-info"><div class="dim-title">流程（分几步干）</div><div class="dim-body">每一步：输入什么 → 做什么 → 输出什么 → 下一步去哪</div></div></div>
+    <div class="dim-card"><div class="dim-num">4</div><div class="dim-info"><div class="dim-title">工具（靠什么干活）</div><div class="dim-body">脚本、模板、调色板、命令行工具、API 等具体依赖</div></div></div>
+    <div class="dim-card"><div class="dim-num">5</div><div class="dim-info"><div class="dim-title">容错（出错了怎么办）</div><div class="dim-body">每种可能的失败都有 B 方案或 fallback，不崩溃不沉默</div></div></div>
+    <div class="dim-card"><div class="dim-num">6</div><div class="dim-info"><div class="dim-title">评测（怎么算干好）</div><div class="dim-body">可验证的是非题——"标题字体是 Poppins 吗？" 而不是 "好看吗？"</div></div></div>
+    <div class="dim-card"><div class="dim-num">7</div><div class="dim-info"><div class="dim-title">验证（怎么证明正确）</div><div class="dim-body">事后检查——输出能正常打开吗？结果可复现吗？各项指标达标吗？</div></div></div>
+  </div>
+
+  <!-- === 详细教学：以 brand-guidelines 为例 === -->
+  <div style="max-width:900px;margin:0 auto">
+    <h3 style="font-family:Georgia,serif;font-size:20px;color:var(--ink);text-align:center;margin:36px 0 6px">动手教学：手把手拆解 brand-guidelines</h3>
+    <p style="text-align:center;color:var(--ink-muted);font-size:13px;margin-bottom:28px">下面是 <strong>brand-guidelines</strong>（品牌配色规范）的完整 SKILL.md 写法，逐维度标注。读完你就能照着写自己的。</p>
+
+    <!-- SKILL.md 完整源码 + 逐行标注 -->
+    <div style="background:var(--card);border:2px solid var(--border-warm);border-radius:12px;padding:24px 28px;margin-bottom:24px;position:relative">
+      <div style="position:absolute;top:-12px;left:24px;background:var(--terra);color:#fff;padding:2px 14px;border-radius:10px;font-size:11px;font-weight:700">SKILL.md 完整源码</div>
+
+      <!-- frontmatter -->
+      <div style="margin-top:8px;margin-bottom:20px">
+        <div style="font-size:11px;color:var(--terra);font-weight:700;margin-bottom:4px">▼ 维度 1：元数据 — 写在文件最顶部的 YAML 头（frontmatter）</div>
+        <pre style="background:#faf8f2;border:1px solid var(--grid-line);border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.7;overflow-x:auto;margin:0"><span style="color:var(--ink-muted)">---</span>
+<span style="color:var(--terra)">name:</span> brand-guidelines          <span style="color:var(--ink-muted)">← 唯一 ID，英文小写，连字符分隔</span>
+<span style="color:var(--terra)">description:</span> <span style="color:var(--sage)">"Applies Anthropic's official brand colors and typography..."</span>
+                    <span style="color:var(--ink-muted)">← 最重要！一句话说清：干什么 + 什么时候触发</span>
+                    <span style="color:var(--ink-muted)">  AI 靠这个判断"我该不该翻这本说明书"</span>
+<span style="color:var(--ink-muted)">---</span></pre>
+        <div style="background:#fff9ec;border-left:3px solid var(--terra);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink)">
+          <strong style="color:var(--terra)">🧑 人话翻译：</strong><code>---</code> 是 YAML 格式的开场标记，写技能文件必须用它开头和收尾。下面两行是真正的内容：<br><br><code>name: brand-guidelines</code> → 这技能的英文名叫 brand-guidelines（品牌指导规范），全部小写，单词中间用短横线连起来，不能有空格。<br><br><code>description: "Applies Anthropic's official brand colors and typography..."</code> → 这句英文直译是「把 Anthropic 公司官方的品牌色和字体套到任何作品上」。注意这句描述里藏了两个信息：<strong>它能干什么</strong>（套品牌色和字体）和<strong>什么时候触发</strong>（当用户提到品牌色、字体、风格规范的时候）。AI 就是靠读这句话判断"我该不该翻这本说明书"。<br><br>最后再写一个 <code>---</code> 表示 YAML 头结束。
+        </div>
+      </div>
+
+      <!-- 概述 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:4px">▼ 维度 2：边界 — 第一段概述就划清"管什么、不管什么"</div>
+        <pre style="background:#faf8f2;border:1px solid var(--grid-line);border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.7;overflow-x:auto;margin:0"><span style="color:var(--ink-muted)"># Brand Guidelines</span>
+
+This skill applies Anthropic's brand colors and typography to <strong>any artifact</strong>.
+<span style="color:var(--amber)">← 管什么：任何类型的作品（PPT/文档/网页/海报...）</span>
+
+It covers <strong>colors and fonts only</strong>. It does NOT handle layout,
+animation, illustration style, or voice & tone.
+<span style="color:var(--amber)">← 不管什么：布局 / 动画 / 插画风格 / 文案语调 —— 明确排除</span>
+
+<strong>Prerequisites:</strong> none. Works with any output format (HTML, PPTX, PNG, etc.).
+<span style="color:var(--amber)">← 前置条件：无，纯色值+字体方案，不依赖任何外部工具</span></pre>
+        <div style="background:#fff9ec;border-left:3px solid var(--amber);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink)">
+          <strong style="color:var(--amber)">🧑 人话翻译：</strong><code># Brand Guidelines</code> → 这是正文的大标题，直译就是「品牌指导规范」。<br><br>第一句 <code>This skill applies Anthropic's brand colors and typography to any artifact.</code> → 直译：这个技能把 Anthropic 的品牌颜色和字体应用到 <strong>任何作品</strong> 上。注意 any artifact 这个词——不管是 PPT、文档、网页、海报，通通都能用。<br><br>第二句 <code>It covers colors and fonts only. It does NOT handle layout, animation, illustration style, or voice & tone.</code> → 直译：这个技能 <strong>只管颜色和字体</strong>，不管布局、不管动画、不管插画风格、不管文案语气。这句就是画边界线——线内的我才管，线外的别找我。<br><br>第三句 <code>Prerequisites: none. Works with any output format.</code> → 直译：没有前置条件（不用装任何软件），输出什么格式都行（HTML、PPTX、PNG 随便）。
+        </div>
+      </div>
+
+      <!-- 流程 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--rose);font-weight:700;margin-bottom:4px">▼ 维度 3：流程 — 分步执行，每一步有判断标准</div>
+        <pre style="background:#faf8f2;border:1px solid var(--grid-line);border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.7;overflow-x:auto;margin:0"><span style="color:var(--ink-muted)">## Execution Steps</span>
+
+<strong>Step 1:</strong> Determine the artifact type (slide, doc, web page, etc.)
+  → If unknown → ask user "What format are you outputting to?"
+<span style="color:var(--rose)">  ← 有判断分支：不知道就问，别猜</span>
+
+<strong>Step 2:</strong> Select color roles: headings → <span style="color:var(--terra)">#141413</span>, CTAs → <span style="color:var(--amber)">#f59e0b</span>, ...
+  → If high-contrast context → use white text on dark background instead
+
+<strong>Step 3:</strong> Apply fonts: Heading=Poppins, Body=Lora
+  → If output is plain text → skip fonts, use system default
+
+<strong>Step 4:</strong> Run fallback check: are all specified fonts available?
+  → If any missing → activate fallback chain automatically</pre>
+        <div style="background:#fff9ec;border-left:3px solid var(--rose);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink)">
+          <strong style="color:var(--rose)">🧑 人话翻译：</strong><code>## Execution Steps</code> → 二级标题，直译「执行步骤」。下面写了 4 步，每一步都是"干什么 → 然后怎么判断"的结构：<br><br><strong>Step 1:</strong> <code>Determine the artifact type</code> → 先搞清楚你要做的作品是什么类型——是幻灯片、是文档、还是网页？<br>　<code>→ If unknown → ask user "What format are you outputting to?"</code> → 如果 AI 判断不出来是什么类型，就直接开口问用户「你要输出什么格式？」——别自己瞎猜。<br><br><strong>Step 2:</strong> <code>Select color roles</code> → 给不同文字指定颜色：标题用主色 #141413，按钮和链接用辅助色 #f59e0b。<br>　<code>→ If high-contrast context → use white text on dark background</code> → 如果用户要的是深色背景，那字就不能用深色了，切换成白字。<br><br><strong>Step 3:</strong> <code>Apply fonts</code> → 应用字体：标题用 Poppins，正文用 Lora。<br>　<code>→ If output is plain text → skip fonts, use system default</code> → 但如果输出的是纯文本（没有任何格式那种），那就别管字体了，用系统默认字体就行。<br><br><strong>Step 4:</strong> <code>Run fallback check</code> → 最后检查一遍：指定的字体系统里都有吗？<br>　<code>→ If any missing → activate fallback chain automatically</code> → 如果哪个字体不存在，自动启动降级链条。
+        </div>
+      </div>
+
+      <!-- 工具：色板 + 字体 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--sage);font-weight:700;margin-bottom:4px">▼ 维度 4：工具 — 列出所有具体的"生产资料"（色板 + 字体表）</div>
+        <pre style="background:#faf8f2;border:1px solid var(--grid-line);border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.7;overflow-x:auto;margin:0"><span style="color:var(--ink-muted)">## Color Palette</span>
+
+| Role        | Hex       | Usage                     |
+|-------------|-----------|---------------------------|
+| Primary     | <span style="color:var(--terra)">#141413</span>   | Headings, body text       |
+| Secondary   | <span style="color:var(--amber)">#f59e0b</span>   | CTAs, hover states        |
+| ...         | ...       | ...                       |
+
+<span style="color:var(--sage)">← 色值精确到 hex——不给 AI 模糊空间，"深灰"不靠谱，#141413 才靠谱</span>
+
+<span style="color:var(--ink-muted)">## Typography</span>
+
+| Role    | Font Stack                        |
+|---------|-----------------------------------|
+| Heading | Poppins, sans-serif               |
+| Body    | Lora, Georgia, serif              |
+
+<span style="color:var(--sage)">← 字体栈 = 备胎链：Poppins 没有→Arial，Lora 没有→Georgia→系统字体</span></pre>
+        <div style="background:#fff9ec;border-left:3px solid var(--sage);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink)">
+          <strong style="color:var(--sage)">🧑 人话翻译：</strong>这里两张表，就是给 AI 的"原料清单"。<br><br><code>## Color Palette</code>（调色板）：三列分别是 Role（用途）、Hex（色值）、Usage（用在哪）。比如主色 <code>#141413</code> 用于标题和正文，辅助色 <code>#f59e0b</code> 用于按钮和鼠标悬停。每一行都是一个精确的"什么颜色往哪招呼"的指令。<br><br><code>## Typography</code>（字体排印）：两列，Role（用途）、Font Stack（字体栈）。标题用 Poppins，正文用 Lora。<strong>"字体栈"就是一串备胎：</strong>Poppins 没装 → 用 sans-serif 兜底；Lora 没装 → 用 Georgia，再没有 → 用系统 serif。<br><br>这两张表的核心思路一样：<strong>只给精确数据，不给模糊描述。</strong>
+        </div>
+      </div>
+
+      <!-- 容错 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--rust);font-weight:700;margin-bottom:4px">▼ 维度 5：容错 — 每种可能翻车的场景，都有明确的"那就……"</div>
+        <pre style="background:#faf8f2;border:1px solid var(--grid-line);border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.7;overflow-x:auto;margin:0"><span style="color:var(--ink-muted)">## Fallback Strategy</span>
+- Poppins unavailable → <strong>fall back to Arial</strong>
+- Primary color contrast fails → <strong>switch to black text</strong>
+<span style="color:var(--rust)">← 每一行一个"万一……那就……"</span></pre>
+        <div style="background:#fff9ec;border-left:3px solid var(--rust);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink)">
+          <strong style="color:var(--rust)">🧑 人话翻译：</strong><code>## Fallback Strategy</code> → 二级标题，直译「降级策略」——其实就是"万一出状况了怎么办"。<br><br>第一条 <code>Poppins unavailable → fall back to Arial</code> → 万一 Poppins 字体在系统里没装，那就改用 Arial。<br>第二条 <code>Primary color contrast fails → switch to black text</code> → 万一主色文字在背景上对比度不够（看不清），就直接切回黑色。<br><br><strong>容错策略的写法套路就是"万一……那就……"，</strong>一两行就够。你不写的话，AI 遇到意外会自己猜一个方案，那个方案大概率不是你想要的。
+        </div>
+      </div>
+
+      <!-- 评测 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--olive);font-weight:700;margin-bottom:4px">▼ 维度 6：评测 — 干完活立刻自查，每条都能答"是/否"</div>
+        <pre style="background:#faf8f2;border:1px solid var(--grid-line);border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.7;overflow-x:auto;margin:0"><span style="color:var(--ink-muted)">## Verification Checklist</span>
+- [ ] Are all headings in <strong>Poppins</strong>?    <span style="color:var(--olive)">← 是/否问题，不模糊</span>
+- [ ] Are all CTAs using <span style="color:var(--amber)">#f59e0b</span>?
+- [ ] Did any font fallback activate? If yes → is the result still readable?
+- [ ] Do colors pass WCAG AA contrast ratio?</pre>
+        <div style="background:#fff9ec;border-left:3px solid var(--olive);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink)">
+          <strong style="color:var(--olive)">🧑 人话翻译：</strong><code>## Verification Checklist</code> → 直译「验证清单」，是干完活立刻自检的列表。每行 <code>- [ ]</code> 是一个可勾选条目：<br><br>第一条：所有标题字体是 Poppins 吗？<br>第二条：所有按钮颜色是 #f59e0b 吗？<br>第三条：触发字体降级了吗？如果触发了，文字还能看清吗？<br>第四条：颜色搭配通过了 WCAG AA 无障碍对比度标准吗？<br><br><strong>关键：每条都是"是/否"问题，</strong>不是"看起来好看吗"这种没法客观判断的东西。
+        </div>
+      </div>
+
+      <!-- 验证 -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:11px;color:var(--ink-secondary);font-weight:700;margin-bottom:4px">▼ 维度 7：验证 — 事后确认"输出能不能正常用"</div>
+        <pre style="background:#faf8f2;border:1px solid var(--grid-line);border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.7;overflow-x:auto;margin:0"><span style="color:var(--ink-muted)">## Post-Output Validation</span>
+- Output file opens correctly in target application
+- Brand colors render identically across Chrome / Safari / Firefox
+- Text contrast ≥ 4.5:1 when measured with a contrast checker</pre>
+        <div style="background:#fff9ec;border-left:3px solid var(--ink-secondary);border-radius:4px;padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink)">
+          <strong style="color:var(--ink-secondary)">🧑 人话翻译：</strong><code>## Post-Output Validation</code> → 直译「输出后验证」，文件生成之后才做的最终确认，跟评测不一样——评测是自己查自己的，验证是查"这东西能用吗"：<br><br>第一条：输出的文件在目标程序里能正常打开不报错吗？<br>第二条：品牌色在 Chrome、Safari、Firefox 三个浏览器里颜色一样吗？<br>第三条：用工具量一下文字对比度≥4.5:1 了吗？<br><br><strong>评测（维度6）和验证（维度7）的区别：</strong>评测是"我按规范做了吗"，验证是"做出来的东西能用吗"。一个问过程，一个问结果。
+        </div>
+      </div>
+    </div>
+
+    <!-- 模板骨架：照着填 -->
+    <div style="background:#fffdf5;border:2px dashed var(--amber);border-radius:12px;padding:20px 24px;margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:10px">📋 照着填：把 brand-guidelines 的骨架抽出来，改改就是你自己的</div>
+      <pre style="background:transparent;padding:0;font-size:12px;line-height:1.8;margin:0;white-space:pre-wrap">---
+name: <span style="background:#fef3c7;padding:0 4px">你的技能名-英文小写</span>
+description: <span style="background:#fef3c7;padding:0 4px">"一句话：干什么 + 什么时候触发"</span>
+---
+
+# <span style="background:#fef3c7;padding:0 4px">技能中文标题</span>
+
+## 概述（维度 2：边界）
+<span style="background:#fef3c7;padding:0 4px">这个技能解决什么问题？管什么？</span>
+<span style="background:#fef3c7;padding:0 4px">明确不管什么？（排除范围）</span>
+<span style="background:#fef3c7;padding:0 4px">前置条件是什么？（无 / 需要 XX 工具）</span>
+
+## 执行步骤（维度 3：流程）
+<span style="background:#fef3c7;padding:0 4px">### Step 1：XXX</span>
+<span style="background:#fef3c7;padding:0 4px">  输入 → 处理 → 输出 → 判断（如果 A 则 B）</span>
+<span style="background:#fef3c7;padding:0 4px">### Step 2：XXX</span>
+<span style="background:#fef3c7;padding:0 4px">  ...</span>
+
+## 工具清单（维度 4）
+<span style="background:#fef3c7;padding:0 4px">列出所有要用的数据、模板、脚本、API</span>
+<span style="background:#fef3c7;padding:0 4px">精确到文件名 / 色值 / 命令 / URL</span>
+
+## 异常处理（维度 5：容错）
+<span style="background:#fef3c7;padding:0 4px">- 如果 A 失败 → 走 B 方案</span>
+<span style="background:#fef3c7;padding:0 4px">- 如果 C 不存在 → 提示用户 XXX</span>
+<span style="background:#fef3c7;padding:0 4px">- 如果 D 超时 → 重试 1 次后报错</span>
+
+## 评测检查（维度 6：评测）
+<span style="background:#fef3c7;padding:0 4px">- [ ] 输出是 XXX 格式吗？</span>
+<span style="background:#fef3c7;padding:0 4px">- [ ] 关键字段都有值吗？</span>
+<span style="background:#fef3c7;padding:0 4px">- [ ] 颜色/字体/格式符合规范吗？</span>
+
+## 最终验证（维度 7：验证）
+<span style="background:#fef3c7;padding:0 4px">- 输出文件能被目标程序正常打开吗？</span>
+<span style="background:#fef3c7;padding:0 4px">- 在常见环境下（浏览器/系统）表现一致吗？</span>
+<span style="background:#fef3c7;padding:0 4px">- 如果输入相同，输出可复现吗？</span></pre>
+    </div>
+
+    <!-- 7 维度速查表 -->
+    <div style="background:var(--card);border:1px solid var(--border-warm);border-radius:8px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--paper)">
+            <th style="padding:10px 14px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-warm)">#</th>
+            <th style="padding:10px 14px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-warm)">维度</th>
+            <th style="padding:10px 14px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-warm)">核心问题</th>
+            <th style="padding:10px 14px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-warm)">写在 SKILL.md 的哪里</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);color:var(--terra);font-weight:700">1</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-weight:600">元数据</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line)">叫什么？什么时候触发？什么时候不触发？</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-size:12px;color:var(--ink-secondary)">frontmatter（name + description）</td></tr>
+          <tr><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);color:var(--amber);font-weight:700">2</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-weight:600">边界</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line)">管什么？不管什么？需要什么前置条件？</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-size:12px;color:var(--ink-secondary)">正文第一段（概述 / 范围）</td></tr>
+          <tr><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);color:var(--sage);font-weight:700">3</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-weight:600">流程</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line)">分几步？每步：输入→处理→输出→判断？</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-size:12px;color:var(--ink-secondary)">## Execution Steps / ## 执行步骤</td></tr>
+          <tr><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);color:var(--ink-secondary);font-weight:700">4</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-weight:600">工具</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line)">靠什么干活？精确到文件名、色值、URL？</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-size:12px;color:var(--ink-secondary)">## Color Palette / ## Tools / 数据表</td></tr>
+          <tr><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);color:var(--rust);font-weight:700">5</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-weight:600">容错</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line)">每种失败模式都有 B 方案吗？</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-size:12px;color:var(--ink-secondary)">## Fallback / ## 异常处理 / 流程中的 if→else</td></tr>
+          <tr><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);color:var(--olive);font-weight:700">6</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-weight:600">评测</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line)">怎么证明干好了？能写成是/非检查项吗？</td><td style="padding:8px 14px;border-bottom:1px solid var(--grid-line);font-size:12px;color:var(--ink-secondary)">## Verification Checklist</td></tr>
+          <tr><td style="padding:8px 14px;color:var(--ink-secondary);font-weight:700">7</td><td style="padding:8px 14px;font-weight:600">验证</td><td style="padding:8px 14px">输出能正常用吗？可复现吗？跨环境一致吗？</td><td style="padding:8px 14px;font-size:12px;color:var(--ink-secondary)">## Post-Output Validation / ## 最终验证</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ============ Tab 3: 技能教程 ============ -->
+<div class="tab-content" id="tab-tutorial">
+<div class="container">
+  <div class="tutorial-grid">
+    <!-- 加载别人的技能 -->
+    <div class="tutorial-block">
+      <h3>加载别人的技能</h3>
+      <p class="t-sub">3 种方式，从简单到高级</p>
+
+      <div class="method-card">
+        <div class="method-header">
+          <span class="method-diff easy">简单</span>
+          <h4>方式一：GitHub 仓库克隆</h4>
+        </div>
+        <p>从 GitHub 克隆技能仓库，复制到全局技能目录。适合安装 Anthropic 官方或社区技能。</p>
+        <pre>git clone https://github.com/anthropics/skills /tmp/skills
+cp -r /tmp/skills/skills/技能名 ~/.claude/skills/技能名</pre>
+      </div>
+
+      <div class="method-card">
+        <div class="method-header">
+          <span class="method-diff medium">中等</span>
+          <h4>方式二：手动创建</h4>
+        </div>
+        <p>新建目录 + 写 SKILL.md 文件，适合简单、轻量的个人技能。</p>
+        <pre>mkdir -p ~/.claude/skills/我的技能
+# 然后创建 SKILL.md 文件
+# 内容参考下方「创建模板」</pre>
+      </div>
+
+      <div class="method-card">
+        <div class="method-header">
+          <span class="method-diff hard">高级</span>
+          <h4>方式三：用 skill-creator 生成</h4>
+        </div>
+        <p>使用 skill-creator 元技能，带评估验证和迭代优化，适合生产级技能。</p>
+        <pre># 直接对我说：
+"用 skill-creator 帮我创建一个技能，用来……"</pre>
+      </div>
+    </div>
+
+    <!-- 自己创建新技能 -->
+    <div class="tutorial-block">
+      <h3>自己创建新技能</h3>
+      <p class="t-sub">7 步检查清单 + 可复制模板</p>
+
+      <ul class="checklist" id="checklist">
+        <li onclick="this.classList.toggle('checked')">想好名字和触发条件（description 最最重要）</li>
+        <li onclick="this.classList.toggle('checked')">明确边界：做什么、不做什么、需要什么环境</li>
+        <li onclick="this.classList.toggle('checked')">写出分步执行流程（每步输入 → 输出 → 判断）</li>
+        <li onclick="this.classList.toggle('checked')">列出依赖的工具和脚本</li>
+        <li onclick="this.classList.toggle('checked')">想好出错时的备用方案（fallback）</li>
+        <li onclick="this.classList.toggle('checked')">写 3~5 个可验证的测试断言</li>
+        <li onclick="this.classList.toggle('checked')">补充排除条件（SKIP），避免误触发</li>
+      </ul>
+
+      <p style="font-size:12px;color:var(--ink-muted)">👆 点击每条可标记完成</p>
+
+      <h4 style="margin-top:20px;font-size:14px;color:var(--ink)">最小可运行模板</h4>
+      <div class="skeleton-code">---
+name: 我的第一个技能
+description: "一句话说清功能 + 触发时机"
+---
+
+# 技能名称
+
+## 概述
+这个技能解决什么问题。
+
+## 执行步骤
+### 第一步：检查环境
+确认 XXX 可用，否则提示用户安装。
+
+### 第二步：执行核心任务
+1. 读取输入
+2. 处理数据
+3. 输出结果
+
+### 第三步：验证
+检查输出是否符合预期格式。
+
+## 异常处理
+- 如果 A 失败 → 走 B 方案
+- 如果 C 不存在 → 提示用户</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ 页脚 ============ -->
+<footer>
+<div class="container">
+  <p>数据生成于 <span id="genTime"></span> · 技能变更后运行 <code>node generate-skills-data.js</code> 刷新</p>
+</div>
+</footer>
+
+<script src="skills-data.js"></script>
+<script>
+// ============ 配置（按需修改） ============
+var CONFIG = {
+  // 数据文件名（必须与此 HTML 在同一目录）
+  dataFile: 'skills-data.js',
+
+  // 分类筛选组：Key = 标签文字，Value = 对应的分类名数组（null = 全部）
+  categoryGroups: {
+    '全部': null,
+    '创意设计': ['创意设计', '内容创作'],
+    'API 开发': ['API 开发'],
+    '开发工具': ['开发工具'],
+    '飞书协作': ['飞书基础','飞书通讯','飞书日程','飞书文档','飞书表格','飞书文件','飞书协作','飞书工具','飞书工作流'],
+    '用户自定义': ['用户自定义'],
+    '系统内置': ['项目管理', '系统配置']
+  }
+};
+
+// ============ 数据 ============
+var DATA = window.__SKILLS_DATA__;
+var allSkills = DATA.skills;
+
+// ============ 来源标签样式映射 ============
+function sourceClass(src) {
+  var m = {'Anthropic':'anthropic','飞书':'lark','自定义':'custom','系统内置':'builtin','第三方':'third','项目级':'custom'};
+  return m[src] || 'anthropic';
+}
+
+// ============ 统计栏 ============
+function renderStats(skills) {
+  var total = skills.length;
+  var builtin = skills.filter(function(s) { return s.source === '系统内置'; }).length;
+  var custom = skills.filter(function(s) { return s.source === '自定义' || s.source === '项目级'; }).length;
+  document.getElementById('statRow').innerHTML =
+    '<div class="stat-badge total"><span class="num">' + total + '</span>总计</div>' +
+    '<div class="stat-badge builtin"><span class="num">' + builtin + '</span>系统</div>' +
+    '<div class="stat-badge custom"><span class="num">' + custom + '</span>自定义</div>';
+}
+
+// ============ 筛选栏 ============
+function renderFilterBar() {
+  var bar = document.getElementById('filterBar');
+  var groups = Object.keys(CONFIG.categoryGroups);
+  bar.innerHTML = groups.map(function(g) {
+    var cats = CONFIG.categoryGroups[g];
+    var count = cats === null ? allSkills.length : allSkills.filter(function(s) { return cats.includes(s.category); }).length;
+    return '<div class="filter-chip' + (g === '全部' ? ' active' : '') + '" data-group="' + g + '">' + g + '<span class="count">' + count + '</span></div>';
+  }).join('');
+}
+
+// ============ 渲染卡片 ============
+function renderCards(skills) {
+  var grid = document.getElementById('skillsGrid');
+  var noRes = document.getElementById('noResults');
+  if (skills.length === 0) { grid.innerHTML = ''; noRes.classList.add('visible'); return; }
+  noRes.classList.remove('visible');
+
+  grid.innerHTML = skills.map(function(s, i) {
+    var sc = sourceClass(s.source);
+    var steps = s.dimensions.steps || [];
+    var tools = s.dimensions.tools || [];
+    var stepsHtml = steps.length > 0
+      ? steps.map(function(st, j) {
+          var arrow = j < steps.length - 1 ? '<span class="step-arrow">→</span>' : '';
+          return '<span class="step-tag">' + esc(st) + '</span>' + arrow;
+        }).join('')
+      : '<span class="step-tag">按文档指引执行</span>';
+    var toolsHtml = tools.length > 0
+      ? tools.map(function(t) { return '<span class="tool-tag">' + esc(t) + '</span>'; }).join(' ')
+      : '<span style="font-size:12px;color:var(--ink-muted)">无特定依赖</span>';
+
+    return '<div class="skill-card" data-name="' + esc(s.name) + '" style="animation-delay:' + (i * 0.025) + 's" onclick="toggleCard(this)">' +
+      '<div class="card-header"><div class="card-name">' + esc(s.name) + '</div>' +
+      '<div class="card-badges"><span class="source-badge ' + sc + '">' + esc(s.source) + '</span></div></div>' +
+      '<div class="card-desc">' + esc(s.description || s.dimensions.scenario) + '</div>' +
+      '<div class="card-expand-hint">展开查看详情</div>' +
+      '<div class="card-detail">' +
+        '<div class="dim-item"><div class="dim-item-label">应用场景</div><div class="dim-item-text">' + esc(s.dimensions.scenario) + '</div></div>' +
+        '<div class="dim-item"><div class="dim-item-label">触发条件</div><div class="dim-item-text">' + esc(s.dimensions.trigger) + '</div></div>' +
+        '<div class="dim-item"><div class="dim-item-label">核心功能</div><div class="dim-item-text">' + esc(s.dimensions.features) + '</div></div>' +
+        '<div class="dim-item"><div class="dim-item-label">能解决的问题</div><div class="dim-item-text">' + esc(s.dimensions.solves) + '</div></div>' +
+        '<div class="dim-item"><div class="dim-item-label">执行步骤</div><div class="step-tags">' + stepsHtml + '</div></div>' +
+        '<div class="dim-item"><div class="dim-item-label">涉及工具</div><div>' + toolsHtml + '</div></div>' +
+        '<div class="dim-item"><div class="dim-item-label">评估验证</div><div class="dim-item-text">' + esc(s.dimensions.verification) + '</div></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('filterInfo').textContent = '当前显示 ' + skills.length + ' / ' + allSkills.length + ' 个技能';
+}
+
+// ============ 筛选搜索 ============
+var currentGroup = '全部';
+var currentSearch = '';
+
+function applyFilters() {
+  var cats = CONFIG.categoryGroups[currentGroup];
+  var filtered = cats === null ? allSkills.slice() : allSkills.filter(function(s) { return cats.includes(s.category); });
+  if (currentSearch.trim()) {
+    var q = currentSearch.toLowerCase().trim();
+    filtered = filtered.filter(function(s) {
+      return s.name.toLowerCase().indexOf(q) !== -1 ||
+        (s.description||'').toLowerCase().indexOf(q) !== -1 ||
+        (s.dimensions.scenario||'').toLowerCase().indexOf(q) !== -1 ||
+        (s.dimensions.trigger||'').toLowerCase().indexOf(q) !== -1 ||
+        (s.dimensions.features||'').toLowerCase().indexOf(q) !== -1 ||
+        s.category.toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  renderCards(filtered);
+  renderStats(filtered);
+}
+
+// ============ 卡片展开 ============
+function toggleCard(card) {
+  card.classList.toggle('expanded');
+  card.querySelector('.card-expand-hint').textContent =
+    card.classList.contains('expanded') ? '收起详情' : '展开查看详情';
+}
+
+// ============ Tab 切换 ============
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+  document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+}
+
+// ============ 工具函数 ============
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============ 初始化 ============
+document.getElementById('genTime').textContent = new Date(DATA.generatedAt).toLocaleString('zh-CN');
+
+document.getElementById('filterBar').addEventListener('click', function(e) {
+  var chip = e.target.closest('.filter-chip');
+  if (!chip) return;
+  currentGroup = chip.dataset.group;
+  document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); });
+  chip.classList.add('active');
+  applyFilters();
+});
+
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  currentSearch = e.target.value;
+  applyFilters();
+});
+
+document.getElementById('tabNav').addEventListener('click', function(e) {
+  var btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  switchTab(btn.dataset.tab);
+});
+
+renderFilterBar();
+renderCards(allSkills);
+renderStats(allSkills);
+</script>
+</body>
+</html>
