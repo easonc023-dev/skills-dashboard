@@ -22,6 +22,8 @@ This project does exactly one thing: **scan every skill you have and generate a 
 打开 `skills-dashboard.html`，一个 3 Tab 的页面：
 Open `skills-dashboard.html` and you get a 3-tab page:
 
+![Skills Dashboard 截图](images/20588d78bde148b15bba38c71bc6dd2a.png)
+
 | Tab | 内容 · Content |
 |-----|----------------|
 | 我的技能库 · My Skills | 卡片网格，搜索/分类筛选，点击展开查看 7 维度详情 — Card grid, search & filter by category, click to expand all 7 dimensions |
